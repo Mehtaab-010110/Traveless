@@ -1,0 +1,150 @@
+﻿@using Traveless.Data;
+@page "/reservations"
+@*@inject ReservationManager ReservationManager;*@
+
+<!--
+    Code designed by Mehtab Singh and Navraj Gill
+    March 13, 2023
+    This is the GUI and code for the reservation page. After a reservation has been made the user can come to this page to view/edit the reservation by entering the 
+    reservation code, airline name or passanger name and the user is able to edit the Name of the passanger, the citizenship of the passanger, as well as the status
+    of the reservation from active to inactive
+-->
+
+
+<h4 style="text-align:center">Reservation Finder</h4>
+
+<div class="row align-items-center">
+    <div class="col">
+        <label for="formGroupExampleInput" class="form-label">Code:</label>
+        <input type="text" class="form-control" placeholder="reservation code" aria-label="Any" @bind="reservationCode">
+    </div>
+    <div class="col">
+        <label for="formGroupExampleInput" class="form-label">Airline:</label>
+        <input type="text" class="form-control" placeholder="Airline Name" aria-label="Any" @bind="airlineName">
+    </div>
+    <div class="col">
+        <label for="formGroupExampleInput" class="form-label">Name:</label>
+        <input type="text" class="form-control" placeholder="Passenger Name" aria-label="Any" @bind="passengerName">
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" @onclick="ReservationFinder">Find Reservations</button>
+    </div>
+    <br />
+</div>
+<br />
+<br />
+
+<!--Flights-->
+<h4 style="text-align:center">Reservations</h4>
+
+<div class="col">
+    <label>Flights</label>
+    <select>
+        <option>Select a reservation</option>
+        @foreach (var reservation in matchingReservations)
+        {
+            if (matchingReservations != null)
+            {
+                <option value="@reservation">
+                    @reservation.FlightCode,
+                    @reservation.Airline,
+                    @reservation.Cost,
+                    @reservation.Name,
+                    @reservation.Citizenship,
+                    @reservation.Status
+                </option>
+            }
+        }
+
+    </select>
+
+</div>
+
+<br />
+
+<!--RESERVE-->
+<h4 style="text-align:center">Reserve</h4>
+<div class="mb-3">
+    <label class="form-label">Reservation Code</label>
+    <input type="text" class="form-control" id="reservation code" placeholder="@reservationCode" readonly>
+</div>
+<div class="mb-3">
+    <label for="formGroupExampleInput2" class="form-label">Flight Code</label>
+    <input type="text" class="form-control" id="flight code" placeholder="@flightCode" readonly>
+</div>
+<div class="mb-3">
+    <label for="formGroupExampleInput3" class="form-label">Airline</label>
+    <input type="text" class="form-control" id="airline name" placeholder="@airlineName" readonly>
+</div>
+<div class="mb-3">
+    <label for="formGroupExampleInput4" class="form-label">Cost</label>
+    <input type="text" class="form-control" id="flight cost" placeholder="@cost" readonly>
+</div>
+<div class="mb-3">
+    <label for="formGroupExampleInput5" class="form-label">Name</label>
+    <input type="text" class="form-control" id="Passenger Name" placeholder="@name" readonly>
+</div>
+<div class="mb-3">
+    <label for="formGroupExampleInput6" class="form-label">Citizenship</label>
+    <input type="text" class="form-control" id="Citizenship" placeholder="@citizenship" readonly>
+</div>
+<div class="mb-3">
+    <label for="formGroupExampleInput7" class="form-label">Status</label>
+    <input type="text" class="form-control" id="status" placeholder="@status" readonly>
+</div>
+<br />
+<br />
+<button class="btn btn-primary" style="text-align:center" @onclick="SaveReservations">      SAVE      </button>
+
+@code {
+
+
+    private string reservationCode;
+    private string airlineName;
+    private string passengerName;
+    public string RC;
+    private string cost;
+    private string name;
+    private string citizenship;
+    private string flightCode;
+    private string status = "Active";
+
+    AirportManager am = new AirportManager();
+    FlightManager fm = new FlightManager();
+    ReservationManager rm = new ReservationManager();
+    private List<Reservation> reservationList = ReservationManager.GetReservations();
+
+    private List<Reservation> matchingReservations;
+    private void ReservationFinder()
+    {
+        matchingReservations = ReservationManager.FindMatchingReservations(reservationCode, airlineName, passengerName, reservationList);
+    }
+
+    private Reservation reservationSelected;
+    private void selcfig(ChangeEventArgs x)
+    {
+        RC = x.Value.ToString();
+
+        reservationSelected = matchingReservations.FirstOrDefault(r => r.ReservationCode == RC);
+
+
+        flightCode = reservationSelected.FlightCode;
+        airlineName = reservationSelected.Airline;
+        cost = reservationSelected.Cost;
+        name = reservationSelected.Name;
+        citizenship = reservationSelected.Citizenship;
+        status = reservationSelected.Status;
+
+    }
+
+
+    private void SaveReservations()
+    {
+        ReservationManager.SaveReservation();
+    }
+
+
+}
+
+
+

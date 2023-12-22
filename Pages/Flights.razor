@@ -1,0 +1,239 @@
+﻿@using Traveless.Data;
+@page "/flightdata"
+<!--FLight Finder-->
+<h4 style="text-align:center">Flight Finder</h4>
+
+<!--FROM-->
+<div class="row align-items-center">
+    <div class="col">
+        <label>From:</label><br />
+        <select @bind="originatingAirportName">
+            <option>Select an Airport</option>
+            @foreach (var u in airportNames)
+            {
+                <option value="@u.AirportCode">@u.AirportCode</option>
+            }
+
+        </select>
+    </div>
+
+    <!--TO-->
+    <div class="col">
+        <label>To:</label><br />
+        <select @bind="destinationAirportName">
+            <option>Select an Airport</option>
+            @foreach (var u in airportNames)
+            {
+                <option value="@u.AirportCode">@u.AirportCode</option>
+            }
+
+        </select>
+    </div>
+
+    <!--DAY-->
+    <div class="col">
+        <label>Day: </label><br />
+        <select @bind="selectedDayOfWeek">
+
+            <option>Select a day: </option>
+            <option value="Any">Any</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+            <option value="Sunday">Sunday</option>
+
+        </select>
+    </div>
+    <div class="col">
+
+        <!--FIND FLIGHTS-->
+        <button class="btn btn-primary" @onclick="FlightFinder">
+            Find Flights
+        </button>
+    </div>
+    <br />
+</div>
+<br />
+<br />
+
+<!--Flights-->
+<h4 style="text-align:center">Flights</h4>
+<div class="row align-items-center">
+    <div class="col">
+        <label>Flights</label>
+        <select @onchange="selcfig" value="@FC">
+            <option value="">Select a flight</option>
+            @if (matchingFlights != null)
+            {
+
+                @foreach (var flight in matchingFlights)
+                {
+                    <option value="@flight.FlightCode">
+                        @flight.FlightCode,
+                        @flight.FlightName,
+                        @flight.OriginatingAirport,
+                        @flight.DestinationAirport,
+                        @flight.DayOfWeek,
+                        @flight.FlightTime,
+                        @flight.FlightPrice
+                    </option>
+                }
+            }
+
+        </select>
+
+    </div>
+
+</div>
+
+
+
+<br />
+
+<!--RESERVE-->
+<h4 style="text-align:center">Reserve</h4>
+<div class="mb-3">
+    <label class="form-label">Flight Code</label>
+    <input type="text" class="form-control" id="flightcode" placeholder="@FC" readonly>
+</div>
+<div class="mb-3">
+    <label class="form-label">Airline</label>
+    <input type="text" class="form-control" id="airline" placeholder="@airline" readonly>
+</div>
+<div class="mb-3">
+    <label class="form-label">Day</label>
+    <input type="text" class="form-control" id="dayofweek" placeholder="@selectedDayOfWeek" readonly>
+</div>
+<div class="mb-3">
+    <label class="form-label">Time</label>
+    <input type="text" class="form-control" id="flightTime" placeholder="@flightTime" readonly>
+</div>
+<div class="mb-3">
+    <label class="form-label">Cost</label>
+    <input type="text" class="form-control" id="cost" placeholder="@cost" readonly>
+</div>
+<div class="mb-3">
+    <label for="nameInput" class="form-label">Name</label>
+    <input type="text" class="form-control" placeholder="Name" @bind="@name">
+</div>
+<div class="mb-3">
+    <label for="citizenshipInput" class="form-label">Citizenship</label>
+    <input type="text" class="form-control" placeholder="Citizenship" @bind="@citizenship" />
+</div>
+<br />
+<br />
+
+<button class="btn btn-primary" style="text-align:center" @onclick="@ReserveFlights" disabled=@(FC == null)>Reserve</button>
+<p role="status">Reservation Code : @reservationCode </p>
+
+@code {
+
+    public string selectedDayOfWeek;
+    public string originatingAirportName;
+    public string destinationAirportName;
+    public string FC;
+    public string airline;
+    public double cost;
+    private string flightTime;
+    private string reservationCode;
+    private string name;
+    private string citizenship;
+    private string errorMessage;
+    Reservation reservation;
+
+
+
+    //Creates an object of Airport
+    AirportManager am = new AirportManager();
+    List<Airport> airportNames = AirportManager.GetAirportNames();
+    FlightManager fm = new FlightManager();
+    List<FlightData> flightDetails = FlightManager.GetFlightDetails();
+
+
+    //To store Originating Airport names
+    private void ShowOriginatingAirports(ChangeEventArgs x)
+    {
+        originatingAirportName = x.Value.ToString();
+    }
+
+    //To store destination Airport names
+    private void ShowDestinationAirports(ChangeEventArgs x)
+    {
+        destinationAirportName = x.Value.ToString();
+    }
+
+    //Code that links back end to front end
+
+    private List<FlightData> matchingFlights;
+    private void FlightFinder()
+    {
+        matchingFlights = FlightManager.FindMatchingFlights(originatingAirportName, destinationAirportName, selectedDayOfWeek, flightDetails);
+    }
+
+    private FlightData flightSelected;
+    private void selcfig(ChangeEventArgs x)
+    {
+        FC = x.Value.ToString();
+
+        flightSelected = matchingFlights.FirstOrDefault(f => f.FlightCode == FC);
+
+        if (flightSelected != null)
+        {
+            airline = flightSelected.FlightName;
+            cost = flightSelected.FlightPrice;
+            flightTime = flightSelected.FlightTime;
+            selectedDayOfWeek = flightSelected.DayOfWeek;
+            originatingAirportName = flightSelected.OriginatingAirport;
+            destinationAirportName = flightSelected.DestinationAirport;
+        }
+    }
+
+    //RESERVE FLIGHTS
+    //private List<FlightData> reservations = new List<FlightData>();
+    private void ReserveFlights()
+    {
+        try
+        {
+            reservation = ReservationManager.MakeReservation(reservationCode, flightSelected, name, citizenship);
+
+
+            name = "";
+            citizenship = "";
+            ReservationCode();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            errorMessage = ex.Message;
+        }
+    }
+
+    //CODE FOR RESERVATION
+
+    private void ReservationCode()
+    {
+        reservationCode = ReservationManager.GetRandomReservationCode();
+    }
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
